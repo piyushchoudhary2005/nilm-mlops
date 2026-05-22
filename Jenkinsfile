@@ -19,15 +19,10 @@ pipeline {
 
     agent any
 
-    // ── Tool versions (configure these in Jenkins → Global Tools) ──
-    tools {
-        // jdk 'JDK17'    // uncomment if needed
-    }
-
     // ── Pipeline-wide environment variables ──
     environment {
         // Docker image name — change to your Docker Hub username
-        IMAGE_NAME     = "piyush2005pi/nilm-app"
+        IMAGE_NAME     = "yourdockerhubuser/nilm-app"
         IMAGE_TAG      = "${env.BUILD_NUMBER}"
         IMAGE_LATEST   = "${IMAGE_NAME}:latest"
         IMAGE_VERSIONED = "${IMAGE_NAME}:${IMAGE_TAG}"
@@ -46,8 +41,7 @@ pipeline {
     options {
         buildDiscarder(logRotator(numToKeepStr: '10'))
         timeout(time: 60, unit: 'MINUTES')
-        timestamps()
-        ansiColor('xterm')
+        disableConcurrentBuilds()
     }
 
     triggers {
