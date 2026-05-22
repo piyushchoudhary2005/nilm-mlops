@@ -7,7 +7,7 @@ Run with: pytest tests/ -v --cov=. --cov-report=xml
 import pytest
 import numpy as np
 import pandas as pd
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock  # noqa: F401
 
 
 # ─────────────────────────────────────────────
