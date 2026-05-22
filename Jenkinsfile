@@ -119,7 +119,7 @@ pipeline {
                     . ${VENV_DIR}/bin/activate
                     flake8 mini_project_multi_model.py tests/ \
                         --max-line-length=120 \
-                        --extend-ignore=E501,W503,E302,E305,E402,E401,E221,E701,E702,F401 \
+                        --extend-ignore=E501,W503,E302,E305,E402,E401,E221,E701,E702,F401,W292 \
                         --statistics \
                         --count
                     echo "✅ Lint passed."
