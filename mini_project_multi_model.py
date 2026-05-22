@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 """
 UK-DALE NILM Mini Project — Multi-Model Comparison
 =====================================================
@@ -160,7 +161,7 @@ raw_data = load_ukdale(cfg.UKDALE_PATH)
 print("✅ raw_data loaded.")
 
 # Build pandas Series
-times = pd.date_range(start='2013-01-01', periods=len(raw_data["aggregate"]), freq=f'{cfg.SAMPLE_PERIOD}S')
+times = pd.date_range(start='2013-01-01', periods=len(raw_data["aggregate"]), freq=f'{cfg.SAMPLE_PERIOD}s')
 aggregate_series      = pd.Series(raw_data["aggregate"], index=times, name='aggregate_power')
 
 target_appliance_name  = 'kettle'

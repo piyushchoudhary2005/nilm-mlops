@@ -98,7 +98,7 @@ def load_ukdale(path):
 
 raw = load_ukdale(ukdale_path)
 N   = args.n_samples
-times  = pd.date_range(start="2013-01-01", periods=len(raw["aggregate"]), freq=f"{cfg.SAMPLE_PERIOD}S")
+times  = pd.date_range(start="2013-01-01", periods=len(raw["aggregate"]), freq=f"{cfg.SAMPLE_PERIOD}s")
 agg_s  = pd.Series(raw["aggregate"],              index=times).head(N)
 tgt_s  = pd.Series(raw["appliances"][cfg.TARGET],  index=times).head(N)
 print(f"✅ Loaded {N:,} samples.")

@@ -19,7 +19,7 @@ def sample_aggregate_series():
     """A small synthetic aggregate power series for fast testing."""
     np.random.seed(42)
     n = 2000
-    times = pd.date_range(start="2013-01-01", periods=n, freq="6S")
+    times = pd.date_range(start="2013-01-01", periods=n, freq="6s")
     # Mostly low background (fridge ~80W) with occasional kettle spikes (~2300W)
     values = np.random.uniform(50, 200, n).astype(np.float32)
     spike_idx = np.random.choice(n, size=20, replace=False)
