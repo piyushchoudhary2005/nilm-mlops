@@ -65,10 +65,12 @@ pipeline {
             steps {
                 echo '🔍 Printing environment info...'
                 sh '''
-                    python3 --version
-                    pip3 --version
-                    docker --version
-                    echo "Build: $BUILD_NUMBER | Branch: $GIT_BRANCH"
+                    echo "Build Number: $BUILD_NUMBER"
+                    echo "Branch: $GIT_BRANCH"
+                    echo "Workspace: $WORKSPACE"
+                    python3 --version || echo "python3 not found in PATH"
+                    pip3 --version   || echo "pip3 not found in PATH"
+                    which python3    || echo "python3 binary location unknown"
                 '''
             }
         }
@@ -76,8 +78,12 @@ pipeline {
         // ── Stage 3: Install Dependencies ─────────────────────────
         stage('Install Dependencies') {
             steps {
-                echo '📦 Installing Python dependencies...'
+                echo '📦 Installing Python and dependencies...'
                 sh '''
+                    # Install python3 and pip if not present (Debian/Ubuntu based Jenkins)
+                    which python3 || (apt-get update -qq && apt-get install -y python3 python3-pip python3-venv)
+
+                    # Create virtualenv
                     python3 -m venv ${VENV_DIR}
                     . ${VENV_DIR}/bin/activate
                     pip install --upgrade pip
@@ -211,11 +217,13 @@ pipeline {
         // ── Stage 9: Docker Build ──────────────────────────────────
         stage('Docker Build') {
             steps {
-                echo "🐳 Building Docker image ${IMAGE_VERSIONED}..."
+                echo "🐳 Building Docker image..."
                 sh '''
+                    # Install docker CLI if not present
+                    which docker || (apt-get update -qq && apt-get install -y docker.io)
+
                     docker build \
                         --build-arg BUILD_NUMBER=${BUILD_NUMBER} \
-                        --build-arg GIT_COMMIT=${GIT_COMMIT} \
                         -t ${IMAGE_VERSIONED} \
                         -t ${IMAGE_LATEST} \
                         .
@@ -268,9 +276,7 @@ pipeline {
             """
         }
         always {
-            // Clean up dangling Docker images to save disk space
-            sh 'docker image prune -f || true'
-            cleanWs()
+            deleteDir()
         }
     }
 
