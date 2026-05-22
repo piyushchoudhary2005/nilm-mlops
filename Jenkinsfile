@@ -1,3 +1,4 @@
+
 // ─────────────────────────────────────────────────────────────
 //  UK-DALE NILM Project — Jenkins Declarative Pipeline
 //
@@ -14,11 +15,11 @@
 //   10. Docker Push      — push to Docker Hub / registry
 //   11. Notify           — send Slack / email on success or failure
 // ─────────────────────────────────────────────────────────────
-
+ 
 pipeline {
-
+ 
     agent any
-
+ 
     // ── Pipeline-wide environment variables ──
     environment {
         // Docker image name — change to your Docker Hub username
@@ -26,31 +27,31 @@ pipeline {
         IMAGE_TAG      = "${env.BUILD_NUMBER}"
         IMAGE_LATEST   = "${IMAGE_NAME}:latest"
         IMAGE_VERSIONED = "${IMAGE_NAME}:${IMAGE_TAG}"
-
+ 
         // SonarQube — matches the server name in Jenkins → Configure System
         SONAR_SERVER   = "SonarQube"
-
+ 
         // Jenkins credentials IDs (add these in Jenkins → Credentials)
         DOCKER_CREDS   = "dockerhub-credentials"   // Username+Password credential
         SONAR_TOKEN    = "sonarqube-token"          // Secret text credential
-
+ 
         // Python virtualenv path
         VENV_DIR       = ".venv"
     }
-
+ 
     options {
         buildDiscarder(logRotator(numToKeepStr: '10'))
         timeout(time: 60, unit: 'MINUTES')
         disableConcurrentBuilds()
     }
-
+ 
     triggers {
         // Auto-build on every push to main / master
         pollSCM('H/5 * * * *')
     }
-
+ 
     stages {
-
+ 
         // ── Stage 1: Checkout ──────────────────────────────────────
         stage('Checkout') {
             steps {
@@ -59,7 +60,7 @@ pipeline {
                 sh 'git log --oneline -5'
             }
         }
-
+ 
         // ── Stage 2: Environment Info ──────────────────────────────
         stage('Environment') {
             steps {
@@ -74,25 +75,43 @@ pipeline {
                 '''
             }
         }
-
+ 
         // ── Stage 3: Install Dependencies ─────────────────────────
         stage('Install Dependencies') {
             steps {
                 echo '📦 Installing Python and dependencies...'
                 sh '''
-                    # Install python3 and pip if not present (Debian/Ubuntu based Jenkins)
+                    # Install python3 and system libs if not present
                     which python3 || (apt-get update -qq && apt-get install -y python3 python3-pip python3-venv)
-
+ 
+                    # Install HDF5 headers needed by tables/h5py
+                    apt-get install -y libhdf5-dev pkg-config 2>/dev/null || true
+ 
                     # Create virtualenv
                     python3 -m venv ${VENV_DIR}
                     . ${VENV_DIR}/bin/activate
-                    pip install --upgrade pip
-                    pip install -r requirements.txt
+ 
+                    # Upgrade pip and install build tools
+                    pip install --upgrade pip setuptools wheel
+ 
+                    # Install packages — no strict pinning so pip picks Python 3.13 compatible wheels
+                    pip install "numpy>=1.26.4"
+                    pip install "pandas>=2.2.3"
+                    pip install "h5py>=3.11.0"
+                    pip install "tables>=3.9.2" || echo "⚠️ tables install failed — continuing"
+                    pip install "scikit-learn>=1.4.2"
+                    pip install "xgboost>=2.0.3"
+                    pip install "matplotlib>=3.8.4"
+                    pip install "gradio>=4.31.5"
+                    pip install "kagglehub>=0.2.9"
+                    pip install "pytest>=8.2.0" "pytest-cov>=5.0.0" "flake8>=7.0.0"
+ 
                     echo "✅ Dependencies installed."
+                    pip list
                 '''
             }
         }
-
+ 
         // ── Stage 4: Lint ──────────────────────────────────────────
         stage('Lint') {
             steps {
@@ -114,7 +133,7 @@ pipeline {
                 }
             }
         }
-
+ 
         // ── Stage 5: Unit Tests ────────────────────────────────────
         stage('Unit Tests') {
             steps {
@@ -148,7 +167,7 @@ pipeline {
                 }
             }
         }
-
+ 
         // ── Stage 6: SonarQube Analysis ────────────────────────────
         stage('SonarQube Scan') {
             steps {
@@ -171,7 +190,7 @@ pipeline {
                 }
             }
         }
-
+ 
         // ── Stage 7: Quality Gate ──────────────────────────────────
         stage('Quality Gate') {
             steps {
@@ -189,7 +208,7 @@ pipeline {
                 }
             }
         }
-
+ 
         // ── Stage 8: Train Models ──────────────────────────────────
         stage('Train Models') {
             steps {
@@ -213,7 +232,7 @@ pipeline {
                 }
             }
         }
-
+ 
         // ── Stage 9: Docker Build ──────────────────────────────────
         stage('Docker Build') {
             steps {
@@ -221,7 +240,7 @@ pipeline {
                 sh '''
                     # Install docker CLI if not present
                     which docker || (apt-get update -qq && apt-get install -y docker.io)
-
+ 
                     docker build \
                         --build-arg BUILD_NUMBER=${BUILD_NUMBER} \
                         -t ${IMAGE_VERSIONED} \
@@ -232,7 +251,7 @@ pipeline {
                 '''
             }
         }
-
+ 
         // ── Stage 10: Docker Push ──────────────────────────────────
         stage('Docker Push') {
             steps {
@@ -252,9 +271,9 @@ pipeline {
                 }
             }
         }
-
+ 
     } // end stages
-
+ 
     // ── Post-pipeline actions ──────────────────────────────────────
     post {
         success {
@@ -279,5 +298,5 @@ pipeline {
             deleteDir()
         }
     }
-
+ 
 }
